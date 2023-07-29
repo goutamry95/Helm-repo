@@ -1,0 +1,206 @@
+Terraform
+	- Terraform is a tool for building, changing and versioning cloud
+	  infrastructure safely and efficiently.
+    	- Terraform can manage exisiting and popular service providers as 
+     	  well as custom in-house/on-prime cloud infrastructures.	
+	- Terraform is a IaC tool means Infrasturcture as code.
+	- Terraform is an open source tool by HashiCorp which allow 
+	  us to write IaC to automate provisioning of cloud infrastructure.
+	- Terraform written in Go Language and code is available in GitHub.	
+    	- Code is written in the for of Terraform scripts (.tf file) in HCL (HashiCorp Language)
+     	 
+
+Doc for terraform resources
+	https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/instance	
+	  
+Steps for execution
+	Terraform init
+	  - This command is used to initialize a working directory 
+	    containing terraform containing files.
+	  - This is the first command that should we need to execute 
+	    after writing a new terraform configuration or cloning an 
+		exiting configurations.
+	  - It is safe to run this command multiple times.
+	  - We can prevent the automatic upgrades to new major version 
+		release.
+	
+		1) Initializing the Backend.
+		2) Initializing provider pluging.
+		3) Initializing child module.
+
+	Terraform validate 
+		- This command is used to check the syntax of terraform code.
+		
+	Terraform plan
+		- This command is used to create an execution plan.
+		- Terraform performs a refresh (unless explicitly disabled), and then
+		  it will what actions are necessary to achive the desired state.
+		- This command will scan all the .tf files.  
+		- With out doing any changes to the cloud resources, this command
+		  will just provides an execution plan.
+		
+		To save the generated plan to a file for later execution.
+			terraform plan -out plan.out
+			
+	Terraform apply
+		- This command is used to apply the changes required to reach the 
+		  desired state that is defined in the terraform scripts.
+		
+		  Execute all .tf files - terraform apply  
+		  Execute a plan (plan.out) - terraform apply plan.out
+		  apply and auto approve - terraform apply -auto-approve
+		  
+	Terraform destroy 
+		- It will destroy all the resources which is preent in state file.
+
+        terraform taint
+
+In Terraform, the terraform taint command is used to mark a specific resource as tainted. When a resource is tainted, Terraform will consider it as needing to be recreated during the next terraform apply operation, even if there have been no changes to its configuration.
+
+The command syntax is as follows:
+
+terraform taint aws_instance.example
+
+
+Assignment:
+	- Practise today class 
+	- Create multiple ec2 
+	- Create a s3 bucket
+	
+Terraform State
+	Local State 
+	- When ever we build infrastructure with terraform configuration, a state 
+      file gets created in the local workspace named "terraform.tfstate"
+    - The data saved in this file will be in JSON format.
+    - State file always contains information about the changes that is 
+      made through terraform scripts and when ever we run the terraform plan
+      it compares the actual aws infra with the statefile and then gives us 
+      the prediction results.
+    - This try of state is called "Local State"	  
+
+	Remote state / Backend 
+	- The remote state also know as backend is used to save the .tfstate file 
+	  remotely in S3, git, consul etc. which can be accessed as a common state file 
+	  by multiple users.
+    
+    Advantages of using Backend 
+	   - Safer storage: Storing state file local is not safe and 
+		 we can use encripted remote backed such as s3 to secure the 
+		 state data.
+       - Auditing means we can enable versioning on state file.
+       - Share the state data or we can maintain common state data 
+         accross a team. 
+
+Terraform workspaces are a feature that allows you to manage multiple instances of your infrastructure within a single Terraform configuration. Workspaces provide a way to organize and separate your infrastructure resources based on different environments, such as development, staging, and production.
+
+Each workspace maintains its own state file, which means you can have different sets of resources and configurations for each workspace. This separation helps in isolating and managing infrastructure changes independently across different environments.
+
+Here are some key points about Terraform workspaces:
+
+Default Workspace: When you initialize a Terraform configuration, a default workspace is automatically created. This workspace is initially selected, and any resources you create without explicitly specifying a workspace are associated with the default workspace.
+Creating Workspaces: You can create additional workspaces using the terraform workspace new command. For example, terraform workspace new staging creates a new workspace named "staging".
+Switching Workspaces: To switch between workspaces, you can use the terraform workspace select command. For example, terraform workspace select staging switches to the "staging" workspace.
+Listing Workspaces: You can list all the available workspaces using the terraform workspace list command. It will display the names of all the created workspaces.
+Workspace-specific Variables: Terraform allows you to define workspace-specific variable values. By creating a file named terraform.tfvars for each workspace, you can provide different values for variables based on the selected workspace.
+State Management: Each workspace maintains its own state file, named terraform.tfstate.d/<workspace_name>/terraform.tfstate. This separation ensures that changes made in one workspace don't affect resources in other workspaces.
+
+Terraform script to create S3 Bucket
+
+provider "aws" {
+  region = "your_aws_region"
+}
+
+terraform {
+  backend "s3" {
+    bucket         = "your_s3_bucket_name"
+    key            = "your_state_file_key"
+    region         = "your_aws_region"
+    dynamodb_table = "your_dynamodb_table_name"
+  }
+}
+
+resource "aws_s3_bucket" "example" {
+  bucket = "your_s3_bucket_name"
+  acl    = "private"
+}   
+
+Provisioners in Terraform are used to execute additional actions or commands on a resource before or after it is created or destroyed. They allow you to perform tasks such as initializing a resource, installing software, configuring settings, running scripts, or invoking external tools. Provisioners are often used for bootstrapping instances or setting up initial configurations.
+
+Terraform supports different types of provisioners:
+
+Local-exec Provisioner: This provisioner executes commands on the machine running Terraform, which is typically your local machine. It is useful for running local scripts or commands to perform tasks related to resource provisioning.
+Remote-exec Provisioner: The remote-exec provisioner executes commands on a resource over SSH or WinRM connections. It is commonly used to run scripts or commands on newly created instances or virtual machines.
+File Provisioner: The file provisioner allows you to copy files or directories from the machine running Terraform to a resource after it is created. This is useful for transferring configuration files or scripts to a remote instance.
+Template File Provisioner: The template_file provisioner enables you to dynamically generate files based on templates. It uses variables and expressions to populate the template with data specific to the resource being provisioned.
+-----------------------------------------------------------------------------
+Terraform Symbols once you run the Plan:
+
+ + create
+  ~ update in-place
+  - destroy
+-/+ destroy and then create replacement
+
+------------------------------------------------------------------------------
+IMP Quations
+------------------------------------------------------------------------------
+1) Where you will store the State file? and how do you access it?
+-> we used to store in S3 bucket and while running terraform init command we can use backend configuration
+
+example: terraform init --backend-config="path=s3/terraform.tfstate"
+
+2) What will happen if multiple people trying to run the plan?
+-> terraform will create lockfile, so that only one person can run the plan at a time.
+
+3) what terraform module structure you used in your project?
+->   -Project name    
+       	--main.tf
+	--variable.tf
+	--vars.tfvars
+     -Modules      
+	 -Network
+		--main.tf
+		--variable.tf
+	 -EC2
+		--main.tf
+		--variable.tf
+	 -IAM
+		--main.tf
+		--variable.tf
+	 -Security-group
+		--main.tf
+		--variable.tf
+	 -Database
+		--main.tf
+		--variable.tf   ------etc,,
+
+Note : in above file structure (-) indicates Folder and (--) indiacates file
+
+4) how to call the modulse in project Main.tf (Project main.tf,, not modules main.tf)??
+->example:
+
+   	module "jump-server" {
+  		source             = "../modules/EC2"
+  		zone               = "ap-south-1a"
+  		type               = "t2.micro"
+  		name               = "Jump-server"
+	
+
+5) What will happen when you run terraform init?
+-> it will
+	1) Initialize the Backend.
+	2) Initialize provider pluging.
+	3) Initialize modules.
+
+6)What will happen if someone manually create the resourses through console?
+-> when you run the plan terraform will show destroy symbol, to avoide destroying resourse 
+   we need to update the script with that resource info. so that next time when you run the
+   plan, terraform will not show detroy(-) symbol.
+
+7)What you do if environment is already created by console itslef?
+-> Using terraform import command we can create terraform template.
+
+What is Terraform Taint ?
+In Terraform, terraform taint is a command used to manually mark a resource managed by Terraform as "tainted." Tainting a resource means marking it as requiring destruction and recreation on the next Terraform apply, even if the resource's configuration has not changed. This can be useful in situations where you want to recreate a specific resource due to issues or to apply changes that are not automatically detected by Terraform.
+
+Terraform taint aws instance - This is the command
+		
